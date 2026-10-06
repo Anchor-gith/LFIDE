@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>LFIDE</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&display=swap">
-<style>
+<style id="css">
 :root{--bg:#e9f0f6;--ink:#13233b;--mute:#5a6b82;--card:#fff;--line:#c9d6e3;--acc:#2a56f0;--gold:#f2b705;--accink:#fff;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a2b;--ink:#eaf0f8;--mute:#9aaac0;--card:#172640;--line:#2a3d5c;--acc:#6f8fff;--accink:#0f1a2b}}
@@ -16,37 +16,75 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grote
 main{max-width:640px;margin:0 auto;padding:56px 20px 64px}
 h1{font-size:clamp(4rem,19vw,8rem);font-weight:800;letter-spacing:-.04em;line-height:.9;margin:0}
 .sub{color:var(--mute);margin:14px 0 28px;font-size:1.1rem}
-.btn{display:inline-block;background:var(--acc);color:var(--accink);font-weight:700;text-decoration:none;padding:14px 24px;border-radius:999px;font-size:1rem}
-.btn:hover{filter:brightness(1.1)}
-.btn:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
-h2{font-size:1.5rem;margin:56px 0 14px}
+.btn,button{font:inherit;cursor:pointer;border:0;background:var(--acc);color:var(--accink);font-weight:700;text-decoration:none;display:inline-block;padding:12px 22px;border-radius:999px}
+button.s{padding:6px 12px;font-size:.85rem;background:var(--card);color:var(--ink);border:1px solid var(--line)}
+button.g{background:none;color:var(--mute);padding:0;font-weight:400;text-decoration:underline}
+.btn:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+h2{font-size:1.5rem;margin:48px 0 6px}
+.leg{color:var(--mute);font-size:.9rem;margin:0 0 14px}
 ol{list-style:none;margin:0;padding:0;border-top:2px solid var(--ink)}
-li{display:flex;align-items:baseline;gap:18px;padding:14px 4px;border-bottom:1px solid var(--line)}
+li{display:flex;align-items:center;gap:14px;padding:14px 4px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .n{font-weight:800;font-size:1.6rem;width:2.2ch;color:var(--mute);font-variant-numeric:tabular-nums}
-.p{font-size:1.2rem;font-weight:600}
-li:nth-child(1){padding:22px 4px}
-li:nth-child(1) .n{color:var(--gold)}
-li:nth-child(1) .p{font-size:2rem;font-weight:800}
-li:nth-child(2) .p,li:nth-child(3) .p{font-size:1.4rem;font-weight:700}
+.p{font-size:1.2rem;font-weight:600;flex:1}
+.pt{font-weight:800;font-size:1.2rem;font-variant-numeric:tabular-nums}
+.pt small{font-weight:400;color:var(--mute);font-size:.75rem}
+.rec{color:var(--mute);font-size:.8rem;width:100%;padding-left:calc(2.2ch + 14px)}
+li.r1{padding:22px 4px}li.r1 .n{color:var(--gold)}li.r1 .p{font-size:2rem;font-weight:800}
+li.r2 .p,li.r3 .p{font-size:1.4rem;font-weight:700}
+.acts{display:flex;gap:6px}
+input{font:inherit;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);width:180px;max-width:100%}
+.foot{margin-top:40px}.msg{color:var(--mute);margin:12px 0}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0}
 </style>
 </head>
 <body>
-<main>
-<h1>LFIDE</h1>
-<p class="sub">Current rankings and league rules.</p>
-<a class="btn" href="https://docs.google.com/document/d/1HzTxL0eb090Ic19-g5DNzUJjz0i0eQMYZOhuLdXq4Hk/edit?tab=t.0" target="_blank" rel="noopener">Rules and Regulations</a>
-<h2>Rankings</h2>
-<ol>
-<li><span class="n">1</span><span class="p">Latte</span></li>
-<li><span class="n">2</span><span class="p">Aaron</span></li>
-<li><span class="n">3</span><span class="p">Anakin</span></li>
-<li><span class="n">4</span><span class="p">Ray</span></li>
-<li><span class="n">5</span><span class="p">Narvy</span></li>
-<li><span class="n">6</span><span class="p">Kato</span></li>
-<li><span class="n">7</span><span class="p">Jin</span></li>
-<li><span class="n">8</span><span class="p">Mike</span></li>
-<li><span class="n">9</span><span class="p">Taro</span></li>
-</ol>
-</main>
+<main id="root"></main>
+<script id="state" type="application/json">{"players":[{"name":"Latte","w":0,"d":0,"l":0},{"name":"Aaron","w":0,"d":0,"l":0},{"name":"Anakin","w":0,"d":0,"l":0},{"name":"Ray","w":0,"d":0,"l":0},{"name":"Narvy","w":0,"d":0,"l":0},{"name":"Kato","w":0,"d":0,"l":0},{"name":"Jin","w":0,"d":0,"l":0},{"name":"Mike","w":0,"d":0,"l":0},{"name":"Taro","w":0,"d":0,"l":0}],"log":[]}</script>
+<script id="app">
+const S=JSON.parse(document.getElementById('state').textContent);
+const CODE='031415',RULES='https://docs.google.com/document/d/1HzTxL0eb090Ic19-g5DNzUJjz0i0eQMYZOhuLdXq4Hk/edit?tab=t.0';
+const pts=p=>p.w*5+p.d*3+p.l;
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let mode='view',dirty=false,note='';
+const root=document.getElementById('root');
+function ranked(){return S.players.map((p,i)=>({p,i})).sort((a,b)=>pts(b.p)-pts(a.p)||b.p.w-a.p.w||a.i-b.i);}
+function render(){
+ const rows=ranked().map(({p,i},k)=>{
+  const gp=p.w+p.d+p.l;
+  return '<li class="r'+(k+1)+'"><span class="n">'+(k+1)+'</span><span class="p">'+esc(p.name)+'</span>'+
+  (mode==='admin'?'<span class="acts"><button class="s" data-a="w" data-i="'+i+'">Win +5</button><button class="s" data-a="d" data-i="'+i+'">Draw +3</button><button class="s" data-a="l" data-i="'+i+'">Loss +1</button></span>':'')+
+  '<span class="pt">'+pts(p)+' <small>pts</small></span>'+
+  (gp?'<span class="rec">'+p.w+'W '+p.d+'D '+p.l+'L</span>':'')+'</li>';}).join('');
+ let top='<h1>LFIDE</h1><p class="sub">Current rankings and league rules.</p><a class="btn" href="'+RULES+'" target="_blank" rel="noopener">Rules and Regulations</a>';
+ let mid='<h2>'+(mode==='admin'?'Admin':'Rankings')+'</h2><p class="leg">Win = 5 pts · Draw = 3 pts · Loss = 1 pt</p>';
+ if(mode==='admin') mid+='<div class="bar"><button data-a="undo">Undo last</button><button data-a="pub">Publish changes</button><button class="g" data-a="exit">Exit admin</button></div><p class="msg">'+(dirty?'Unsaved changes. Press Publish to update the public page.':'')+esc(note)+'</p>';
+ let foot='<div class="foot">';
+ if(mode==='login') foot+='<input id="code" type="password" placeholder="Admin code" autocomplete="off"> <button data-a="login">Enter</button> <button class="g" data-a="exit">Cancel</button><p class="msg">'+esc(note)+'</p>';
+ else if(mode==='view') foot+='<button class="g" data-a="ask">Admin</button>';
+ foot+='</div>';
+ root.innerHTML=top+mid+'<ol>'+rows+'</ol>'+foot;
+ const c=document.getElementById('code'); if(c){c.focus();c.onkeydown=e=>{if(e.key==='Enter')act('login');};}
+}
+function build(){
+ const head='<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>LFIDE</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&display=swap">';
+ const st=JSON.stringify(S).replace(/</g,'\\u003c');
+ return '<!DOCTYPE html><html lang="en"><head>'+head+'<style id="css">'+document.getElementById('css').textContent+'</style></head><body><main id="root"></main><script id="state" type="application/json">'+st+'<\/script><script id="app">'+document.getElementById('app').textContent+'<\/script></body></html>';
+}
+async function act(a,i){
+ if(a==='ask'){mode='login';note='';}
+ else if(a==='exit'){mode='view';note='';}
+ else if(a==='login'){const v=document.getElementById('code').value; if(v===CODE){mode='admin';note='';}else{note='Wrong code.';}}
+ else if(a==='w'||a==='d'||a==='l'){S.players[i][a]++;S.log.push({i:+i,r:a});dirty=true;note='';}
+ else if(a==='undo'){const x=S.log.pop(); if(x){S.players[x.i][x.r]--;dirty=true;note='';}else note='Nothing to undo.';}
+ else if(a==='pub'){
+  const c=window.claude&&await claude.use('artifact');
+  if(!c){note='Publishing is only available to the page owner.';}
+  else{try{await c.publish(build());return;}catch(e){note='Could not publish: '+(e.code||e.message);}}
+ }
+ render();
+}
+root.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.a)act(b.dataset.a,b.dataset.i);});
+render();
+</script>
 </body>
 </html>
