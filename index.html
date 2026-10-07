@@ -35,6 +35,8 @@ li.r2 .p,li.r3 .p{font-size:1.4rem;font-weight:700}
 input{font:inherit;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);width:180px;max-width:100%}
 .foot{margin-top:40px}.msg{color:var(--mute);margin:12px 0}
 .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0}
+.crown{display:inline-block;font-size:.55em;font-weight:800;letter-spacing:.06em;background:var(--gold);color:#13233b;padding:2px 10px;border-radius:999px;vertical-align:middle;margin-left:6px}
+.rin{width:90px;padding:6px 10px;font-size:.85rem}
 </style>
 </head>
 <body>
@@ -54,10 +56,14 @@ function ranked(){return S.players.map((p,i)=>({p,i})).sort((a,b)=>pts(b.p)-pts(
 function render(){
  const rows=ranked().map(({p,i},k)=>{
   const gp=p.w+p.d+p.l;
-  return '<li class="r'+(k+1)+'"><span class="n">'+(k+1)+'</span><span class="p">'+esc(p.name)+'</span>'+
-  (mode==='admin'?'<span class="acts"><button class="s" data-a="w" data-i="'+i+'">Win +5</button><button class="s" data-a="d" data-i="'+i+'">Draw +3</button><button class="s" data-a="l" data-i="'+i+'">Loss +1</button></span>':'')+
+  const wp=gp?Math.round(p.w/gp*100)+'% win':'';
+  const rt=(p.rt===undefined||p.rt==='')?'':'Rating '+esc(p.rt);
+  const rec=[gp?p.w+'W '+p.d+'D '+p.l+'L':'',wp,rt].filter(Boolean).join(' · ');
+  return '<li class="r'+(k+1)+'"><span class="n">'+(k+1)+'</span><span class="p">'+esc(p.name)+(k===0?' <span class="crown">&#128081; LGM</span>':'')+'</span>'+
+  (mode==='admin'?'<span class="acts"><button class="s" data-a="w" data-i="'+i+'">Win +5</button><button class="s" data-a="d" data-i="'+i+'">Draw +3</button><button class="s" data-a="l" data-i="'+i+'">Loss +1</button><input class="rin" type="number" step="any" placeholder="Rating" aria-label="Rating for '+esc(p.name)+'" data-rt="'+i+'" value="'+(p.rt===undefined?'':esc(p.rt))+'"></span>':'')+
   '<span class="pt">'+pts(p)+' <small>pts</small></span>'+
-  (gp?'<span class="rec">'+p.w+'W '+p.d+'D '+p.l+'L</span>':'')+'</li>';}).join('');
+  (rec?'<span class="rec">'+rec+'</span>':'')+'</li>';
+ }).join('');
  let top='<h1>LFIDE</h1><p class="sub">Current rankings and league rules.</p><a class="btn" href="'+RULES+'" target="_blank" rel="noopener">Rules and Regulations</a>';
  let mid='<h2>'+(mode==='admin'?'Admin':'Rankings')+'</h2><p class="leg">Win = 5 pts · Draw = 3 pts · Loss = 1 pt</p>';
  if(mode==='admin') mid+='<div class="bar"><button data-a="undo">Undo last</button><button class="s" data-a="exp">Export</button><button class="s" data-a="imp">Import</button><button class="g" data-a="exit">Exit admin</button></div><p class="msg">'+esc(note)+'</p>'+(box!==null?'<textarea id="box" rows="6" style="width:100%;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)">'+esc(box)+'</textarea>'+(boxMode==='imp'?'<div class="bar"><button data-a="load">Load pasted data</button></div>':''):'');
@@ -80,6 +86,7 @@ async function act(a,i){
  render();
 }
 root.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.a)act(b.dataset.a,b.dataset.i);});
+root.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.rt!==undefined){const v=t.value.trim();S.players[+t.dataset.rt].rt=v===''?'':Number(v);save();}});
 render();
 </script>
 </body>
