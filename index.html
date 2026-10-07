@@ -37,56 +37,133 @@ input{font:inherit;padding:10px 14px;border-radius:10px;border:1px solid var(--l
 .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0}
 .crown{display:inline-block;font-size:.55em;font-weight:800;letter-spacing:.06em;background:var(--gold);color:#13233b;padding:2px 10px;border-radius:999px;vertical-align:middle;margin-left:6px}
 .rin{width:90px;padding:6px 10px;font-size:.85rem}
+input,select{font:inherit;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);max-width:100%}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.ev{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.evt{font-size:1.25rem;margin-left:8px}
+.tag{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--mute)}
+.dt{color:var(--mute);margin:4px 0 10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:4px 6px 4px 12px;font-weight:600}
+.chip.won{border-color:var(--gold);background:rgba(242,183,5,.18)}
+.chip.lost{opacity:.65}
+.chip button.s{padding:2px 8px;font-size:.75rem}
+.sum{margin:8px 0 0;font-size:.95rem}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.sec{color:var(--mute);font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin:28px 0 10px}
 </style>
 </head>
 <body>
 <main id="root"></main>
-<script id="state" type="application/json">{"players":[{"name":"Latte","w":0,"d":0,"l":0},{"name":"Aaron","w":0,"d":0,"l":0},{"name":"Anakin","w":0,"d":0,"l":0},{"name":"Ray","w":0,"d":0,"l":0},{"name":"Narvy","w":0,"d":0,"l":0},{"name":"Kato","w":0,"d":0,"l":0},{"name":"Jin","w":0,"d":0,"l":0},{"name":"Mike","w":0,"d":0,"l":0},{"name":"Taro","w":0,"d":0,"l":0}],"log":[]}</script>
+<script id="state" type="application/json">{"players":[{"name":"Latte","w":0,"d":0,"l":0},{"name":"Aaron","w":0,"d":0,"l":0},{"name":"Anakin","w":0,"d":0,"l":0},{"name":"Ray","w":0,"d":0,"l":0},{"name":"Narvy","w":0,"d":0,"l":0},{"name":"Kato","w":0,"d":0,"l":0},{"name":"Jin","w":0,"d":0,"l":0},{"name":"Mike","w":0,"d":0,"l":0},{"name":"Taro","w":0,"d":0,"l":0}],"log":[],"events":[{"id":"e1","t":"General Competition","k":"General","d":"","s":[],"r":{}},{"id":"e2","t":"Halloween Competition","k":"Holiday","d":"","s":[],"r":{}}]}</script>
 <script id="app">
-const KEY='lfide-standings-v1';
-let S=JSON.parse(document.getElementById('state').textContent);
+const KEY='lfide-standings-v1',CODE='031415',RULES='https://docs.google.com/document/d/1HzTxL0eb090Ic19-g5DNzUJjz0i0eQMYZOhuLdXq4Hk/edit?tab=t.0';
+const DEF=JSON.parse(document.getElementById('state').textContent);
+let S=DEF;
 try{const t=localStorage.getItem(KEY);if(t){const o=JSON.parse(t);if(o&&Array.isArray(o.players))S=o;}}catch(e){}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));dirty=false;note='Saved.';}catch(e){note='Could not save in this browser.';}}
-const CODE='031415',RULES='https://docs.google.com/document/d/1HzTxL0eb090Ic19-g5DNzUJjz0i0eQMYZOhuLdXq4Hk/edit?tab=t.0';
+if(!Array.isArray(S.events))S.events=DEF.events;
+if(!Array.isArray(S.log))S.log=[];
+const MONTHS=[['nov','November','Thanksgiving'],['dec','December','Christmas'],['jan','January','New Year'],['feb','February',"Valentine's Day"],['mar','March',"St. Patrick's Day"],['apr','April','Easter'],['may','May',"Mother's Day"],['jun','June','Summer Solstice'],['jul','July','Fourth of July'],['aug','August','Back to School'],['sep','September','Fall Festival']];
+if(!S.months){
+ MONTHS.forEach(m=>{
+  [['m-'+m[0]+'-g',m[1]+' General Competition','General'],['m-'+m[0]+'-h',m[2]+' Competition ('+m[1]+')','Holiday']].forEach(x=>{
+   if(!S.events.some(e=>e.id===x[0]))S.events.push({id:x[0],t:x[1],k:x[2],d:'',s:[],r:{}});});});
+ const e1=S.events.find(e=>e.id==='e1');if(e1&&e1.t==='General Competition')e1.t='October General Competition';
+ const e2=S.events.find(e=>e.id==='e2');if(e2&&e2.t==='Halloween Competition')e2.t='Halloween Competition (October)';
+ S.months=1;try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
+}
+let mode='view',page='home',note='',box=null,boxMode='';
+try{if(location.hash==='#calendar')page='cal';}catch(e){}
 const pts=p=>p.w*5+p.d*3+p.l;
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let mode='view',dirty=false,note='',box=null,boxMode='';
 const root=document.getElementById('root');
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));note='Saved.';}catch(e){note='Could not save in this browser.';}}
 function ranked(){return S.players.map((p,i)=>({p,i})).sort((a,b)=>pts(b.p)-pts(a.p)||b.p.w-a.p.w||a.i-b.i);}
-function render(){
+const admin=()=>mode==='admin';
+function fmt(d){try{return new Date(d+'T00:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric',year:'numeric'});}catch(e){return d;}}
+function adminBar(){
+ if(!admin())return '';
+ return '<div class="bar">'+(page==='home'?'<button data-a="undo">Undo last</button>':'')+'<button class="s" data-a="exp">Export</button><button class="s" data-a="imp">Import</button><button class="g" data-a="exit">Exit admin</button></div><p class="msg">'+esc(note)+'</p>'+(box!==null?'<textarea id="box" rows="6" style="width:100%;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)">'+esc(box)+'</textarea>'+(boxMode==='imp'?'<div class="bar"><button data-a="load">Load pasted data</button></div>':''):'');
+}
+function homeHtml(){
  const rows=ranked().map(({p,i},k)=>{
   const gp=p.w+p.d+p.l;
   const wp=gp?Math.round(p.w/gp*100)+'% win':'';
   const rt=(p.rt===undefined||p.rt==='')?'':'Rating '+esc(p.rt);
   const rec=[gp?p.w+'W '+p.d+'D '+p.l+'L':'',wp,rt].filter(Boolean).join(' · ');
   return '<li class="r'+(k+1)+'"><span class="n">'+(k+1)+'</span><span class="p">'+esc(p.name)+(k===0?' <span class="crown">&#128081; LGM</span>':'')+'</span>'+
-  (mode==='admin'?'<span class="acts"><button class="s" data-a="w" data-i="'+i+'">Win +5</button><button class="s" data-a="d" data-i="'+i+'">Draw +3</button><button class="s" data-a="l" data-i="'+i+'">Loss +1</button><input class="rin" type="number" step="any" placeholder="Rating" aria-label="Rating for '+esc(p.name)+'" data-rt="'+i+'" value="'+(p.rt===undefined?'':esc(p.rt))+'"></span>':'')+
-  '<span class="pt">'+pts(p)+' <small>pts</small></span>'+
-  (rec?'<span class="rec">'+rec+'</span>':'')+'</li>';
- }).join('');
- let top='<h1>LFIDE</h1><p class="sub">Current rankings and league rules.</p><a class="btn" href="'+RULES+'" target="_blank" rel="noopener">Rules and Regulations</a>';
- let mid='<h2>'+(mode==='admin'?'Admin':'Rankings')+'</h2><p class="leg">Win = 5 pts · Draw = 3 pts · Loss = 1 pt</p>';
- if(mode==='admin') mid+='<div class="bar"><button data-a="undo">Undo last</button><button class="s" data-a="exp">Export</button><button class="s" data-a="imp">Import</button><button class="g" data-a="exit">Exit admin</button></div><p class="msg">'+esc(note)+'</p>'+(box!==null?'<textarea id="box" rows="6" style="width:100%;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)">'+esc(box)+'</textarea>'+(boxMode==='imp'?'<div class="bar"><button data-a="load">Load pasted data</button></div>':''):'');
- let foot='<div class="foot">';
- if(mode==='login') foot+='<input id="code" type="password" placeholder="Admin code" autocomplete="off"> <button data-a="login">Enter</button> <button class="g" data-a="exit">Cancel</button><p class="msg">'+esc(note)+'</p>';
- else if(mode==='view') foot+='<button class="g" data-a="ask">Admin</button>';
- foot+='</div>';
- root.innerHTML=top+mid+'<ol>'+rows+'</ol>'+foot;
- const c=document.getElementById('code'); if(c){c.focus();c.onkeydown=e=>{if(e.key==='Enter')act('login');};}
+  (admin()?'<span class="acts"><button class="s" data-a="w" data-i="'+i+'">Win +5</button><button class="s" data-a="d" data-i="'+i+'">Draw +3</button><button class="s" data-a="l" data-i="'+i+'">Loss +1</button><input class="rin" type="number" step="any" placeholder="Rating" aria-label="Rating for '+esc(p.name)+'" data-rt="'+i+'" value="'+(p.rt===undefined?'':esc(p.rt))+'"></span>':'')+
+  '<span class="pt">'+pts(p)+' <small>pts</small></span>'+(rec?'<span class="rec">'+rec+'</span>':'')+'</li>';}).join('');
+ return '<h2>'+(admin()?'Admin':'Rankings')+'</h2><p class="leg">Win = 5 pts · Draw = 3 pts · Loss = 1 pt</p>'+adminBar()+'<ol>'+rows+'</ol>';
 }
-async function act(a,i){
- if(a==='ask'){mode='login';note='';}
- else if(a==='exit'){mode='view';note='';}
- else if(a==='login'){const v=document.getElementById('code').value; if(v===CODE){mode='admin';note='';}else{note='Wrong code.';}}
- else if(a==='w'||a==='d'||a==='l'){S.players[i][a]++;S.log.push({i:+i,r:a});save();}
- else if(a==='undo'){const x=S.log.pop(); if(x){S.players[x.i][x.r]--;save();}else note='Nothing to undo.';}
- else if(a==='exp'){box=JSON.stringify(S);boxMode='exp';note='Copy this text to back up your standings.';}
+function evCard(e){
+ const r=e.r||{},done=Object.keys(r).length>0;
+ let h='<div class="ev"><span class="tag">'+esc(e.k)+'</span><b class="evt">'+esc(e.t)+'</b><div class="dt">'+(e.d?fmt(e.d):'Date to be announced')+'</div>';
+ if(admin())h+='<div class="row"><input type="text" value="'+esc(e.t)+'" data-et="'+e.id+'" aria-label="Event title"><input type="date" value="'+esc(e.d)+'" data-ed="'+e.id+'" aria-label="Event date"><button class="s" data-a="delev" data-e="'+e.id+'">Delete event</button></div>';
+ h+='<div class="chips">'+(e.s.length?e.s.map(n=>{
+  const x=r[n]||'';
+  return '<span class="chip '+x+'">'+esc(n)+(x==='won'?' &#127942;':'')+(admin()?'<button class="s" data-a="won" data-e="'+e.id+'" data-n="'+esc(n)+'">Won</button><button class="s" data-a="lost" data-e="'+e.id+'" data-n="'+esc(n)+'">Lost</button><button class="s" data-a="rm" data-e="'+e.id+'" data-n="'+esc(n)+'" aria-label="Remove '+esc(n)+'">&times;</button>':(x==='lost'?' <small>lost</small>':''))+'</span>';}).join(''):'<span class="dt">No sign-ups yet.</span>')+'</div>';
+ if(done){
+  const w=e.s.filter(n=>r[n]==='won'),l=e.s.filter(n=>r[n]==='lost');
+  h+='<p class="sum">'+(w.length?'<b>Won:</b> '+w.map(esc).join(', '):'')+(w.length&&l.length?' &nbsp;·&nbsp; ':'')+(l.length?'<b>Lost:</b> '+l.map(esc).join(', '):'')+'</p>';
+ }else{
+  const opts=S.players.filter(p=>!e.s.includes(p.name)).map(p=>'<option>'+esc(p.name)+'</option>').join('');
+  h+=opts?'<div class="row"><select id="su-'+e.id+'" aria-label="Your name"><option value="">Choose your name</option>'+opts+'</select><button data-a="su" data-e="'+e.id+'">Sign up</button></div>':'<p class="dt">Everyone on the leaderboard has signed up.</p>';
+ }
+ return h+'</div>';
+}
+function calHtml(){
+ const today=new Date().toISOString().slice(0,10);
+ const isPast=e=>Object.keys(e.r||{}).length>0||(e.d&&e.d<today);
+ const up=S.events.filter(e=>!isPast(e)).sort((a,b)=>(a.d||'9999').localeCompare(b.d||'9999'));
+ const past=S.events.filter(isPast).sort((a,b)=>(b.d||'').localeCompare(a.d||''));
+ let h='<h2>Calendar</h2><p class="leg">Sign up by choosing your name from the leaderboard.</p>'+adminBar();
+ if(!admin()&&note)h+='<p class="msg">'+esc(note)+'</p>';
+ if(admin())h+='<div class="ev"><b>Add event</b><div class="row"><input id="ne-t" type="text" placeholder="Event title"><select id="ne-k"><option>General</option><option>Holiday</option></select><input id="ne-d" type="date"><button data-a="addev">Add</button></div></div>';
+ h+='<div class="sec">Upcoming</div>'+(up.length?up.map(evCard).join(''):'<p class="dt">No upcoming events.</p>');
+ if(past.length)h+='<div class="sec">Past</div>'+past.map(evCard).join('');
+ return h;
+}
+function foot(){
+ let f='<div class="foot">';
+ if(mode==='login')f+='<input id="code" type="password" placeholder="Admin code" autocomplete="off"> <button data-a="login">Enter</button> <button class="g" data-a="exit">Cancel</button><p class="msg">'+esc(note)+'</p>';
+ else if(mode==='view')f+='<button class="g" data-a="ask">Admin</button>';
+ return f+'</div>';
+}
+function render(){
+ const cal=page==='cal';
+ root.innerHTML='<h1>LFIDE</h1><p class="sub">'+(cal?'Upcoming events and sign-ups.':'Current rankings and league rules.')+'</p><div class="btns"><a class="btn" href="'+RULES+'" target="_blank" rel="noopener">Rules and Regulations</a><button data-a="'+(cal?'home':'cal')+'">'+(cal?'Rankings':'Calendar')+'</button></div>'+(cal?calHtml():homeHtml())+foot();
+ const c=document.getElementById('code');if(c){c.focus();c.onkeydown=e=>{if(e.key==='Enter')act('login');};}
+}
+function act(a,d){
+ d=d||{};
+ const ev=d.e?S.events.find(x=>x.id===d.e):null;
+ if(a==='cal'||a==='home'){page=a==='cal'?'cal':'home';note='';box=null;try{location.hash=page==='cal'?'calendar':'';}catch(e){}}
+ else if(a==='ask'){mode='login';note='';}
+ else if(a==='exit'){mode='view';note='';box=null;}
+ else if(a==='login'){const v=document.getElementById('code').value;if(v===CODE){mode='admin';note='';}else note='Wrong code.';}
+ else if(a==='w'||a==='d'||a==='l'){S.players[d.i][a]++;S.log.push({i:+d.i,r:a});save();}
+ else if(a==='undo'){const x=S.log.pop();if(x){S.players[x.i][x.r]--;save();}else note='Nothing to undo.';}
+ else if(a==='exp'){box=JSON.stringify(S);boxMode='exp';note='Copy this text to back up your standings and events.';}
  else if(a==='imp'){box='';boxMode='imp';note='Paste exported data below.';}
- else if(a==='load'){try{const o=JSON.parse(document.getElementById('box').value);if(!o||!Array.isArray(o.players))throw 0;S=o;save();box=null;}catch(e){note='That data is not valid.';}}
+ else if(a==='load'){try{const o=JSON.parse(document.getElementById('box').value);if(!o||!Array.isArray(o.players))throw 0;S=o;if(!Array.isArray(S.events))S.events=[];if(!Array.isArray(S.log))S.log=[];save();box=null;}catch(e){note='That data is not valid.';}}
+ else if(a==='su'){const sel=document.getElementById('su-'+d.e),n=sel&&sel.value;
+  if(!n)note='Choose your name first.';
+  else if(ev&&S.players.some(p=>p.name===n)&&!ev.s.includes(n)){ev.s.push(n);save();note=n+' is signed up!';}}
+ else if(a==='rm'&&ev){ev.s=ev.s.filter(x=>x!==d.n);if(ev.r)delete ev.r[d.n];save();}
+ else if((a==='won'||a==='lost')&&ev){ev.r=ev.r||{};if(ev.r[d.n]===a)delete ev.r[d.n];else ev.r[d.n]=a;save();}
+ else if(a==='delev'){S.events=S.events.filter(x=>x.id!==d.e);save();}
+ else if(a==='addev'){const t=document.getElementById('ne-t').value.trim();
+  if(!t)note='Enter an event title.';
+  else{S.events.push({id:'e'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),t:t,k:document.getElementById('ne-k').value,d:document.getElementById('ne-d').value,s:[],r:{}});save();}}
  render();
 }
-root.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.a)act(b.dataset.a,b.dataset.i);});
-root.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.rt!==undefined){const v=t.value.trim();S.players[+t.dataset.rt].rt=v===''?'':Number(v);save();}});
+root.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.a)act(b.dataset.a,b.dataset);});
+root.addEventListener('change',e=>{const t=e.target,d=t.dataset||{};
+ if(d.rt!==undefined){const v=t.value.trim();S.players[+d.rt].rt=v===''?'':Number(v);save();}
+ else if(d.ed){const ev=S.events.find(x=>x.id===d.ed);if(ev){ev.d=t.value;save();render();}}
+ else if(d.et){const ev=S.events.find(x=>x.id===d.et);if(ev){ev.t=t.value.trim()||ev.t;save();}}
+});
 render();
 </script>
 </body>
