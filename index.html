@@ -55,6 +55,7 @@ input,select{font:inherit;padding:10px 14px;border-radius:10px;border:1px solid 
 .logo img{width:min(230px,62%);height:auto;display:block;mix-blend-mode:multiply}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .logo img{filter:invert(1);mix-blend-mode:screen}}
 :root[data-theme="dark"] .logo img{filter:invert(1);mix-blend-mode:screen}
+.acts{flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -77,7 +78,7 @@ if(!S.months){
  const e2=S.events.find(e=>e.id==='e2');if(e2&&e2.t==='Halloween Competition')e2.t='Halloween Competition (October)';
  S.months=1;try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
 }
-let mode='view',page='home',note='',box=null,boxMode='';
+let delC=-1,mode='view',page='home',note='',box=null,boxMode='';
 try{if(location.hash==='#calendar')page='cal';}catch(e){}
 const pts=p=>p.w*5+p.d*3+p.l;
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -97,9 +98,9 @@ function homeHtml(){
   const rt=(p.rt===undefined||p.rt==='')?'':'Rating '+esc(p.rt);
   const rec=[gp?p.w+'W '+p.d+'D '+p.l+'L':'',wp,rt].filter(Boolean).join(' · ');
   return '<li class="r'+(k+1)+'"><span class="n">'+(k+1)+'</span><span class="p">'+esc(p.name)+(k===0?' <span class="crown">&#128081; LGM</span>':'')+'</span>'+
-  (admin()?'<span class="acts"><button class="s" data-a="w" data-i="'+i+'">Win +5</button><button class="s" data-a="d" data-i="'+i+'">Draw +3</button><button class="s" data-a="l" data-i="'+i+'">Loss +1</button><input class="rin" type="number" step="any" placeholder="Rating" aria-label="Rating for '+esc(p.name)+'" data-rt="'+i+'" value="'+(p.rt===undefined?'':esc(p.rt))+'"></span>':'')+
+  (admin()?'<span class="acts"><button class="s" data-a="w" data-i="'+i+'">Win +5</button><button class="s" data-a="d" data-i="'+i+'">Draw +3</button><button class="s" data-a="l" data-i="'+i+'">Loss +1</button><input class="rin" type="number" step="any" placeholder="Rating" aria-label="Rating for '+esc(p.name)+'" data-rt="'+i+'" value="'+(p.rt===undefined?'':esc(p.rt))+'">'+(delC===i?'<button class="s" data-a="delp2" data-i="'+i+'">Confirm delete</button><button class="s" data-a="delx">Cancel</button>':'<button class="s" data-a="delp" data-i="'+i+'">Delete</button>')+'</span>':'')+
   '<span class="pt">'+pts(p)+' <small>pts</small></span>'+(rec?'<span class="rec">'+rec+'</span>':'')+'</li>';}).join('');
- return '<h2>'+(admin()?'Admin':'Rankings')+'</h2><p class="leg">Win = 5 pts · Draw = 3 pts · Loss = 1 pt</p>'+adminBar()+(admin()?'<div class="row" style="margin:0 0 16px"><input id="np" type="text" placeholder="New player name" maxlength="30" aria-label="New player name"><button data-a="addp">Add player</button></div>':'')+'<ol>'+rows+'</ol>';
+ return '<h2>'+(admin()?'Admin':'Rankings')+'</h2><p class="leg">Win = 5 pts · Draw = 3 pts · Loss = 1 pt</p>'+adminBar()+(admin()?'<div class="row" style="margin:0 0 16px"><input id="np" type="text" placeholder="New player name" maxlength="30" aria-label="New player name"><input class="rin" id="nw" type="number" min="0" placeholder="Wins" aria-label="Starting wins"><input class="rin" id="nd" type="number" min="0" placeholder="Draws" aria-label="Starting draws"><input class="rin" id="nl" type="number" min="0" placeholder="Losses" aria-label="Starting losses"><input class="rin" id="nr" type="number" step="any" placeholder="Rating" aria-label="Starting rating"><button data-a="addp">Add player</button></div>':'')+'<ol>'+rows+'</ol>';
 }
 function evCard(e){
  const r=e.r||{},done=Object.keys(r).length>0;
@@ -142,6 +143,7 @@ function render(){
 }
 function act(a,d){
  d=d||{};
+ if(a!=='delp')delC=-1;
  const ev=d.e?S.events.find(x=>x.id===d.e):null;
  if(a==='cal'||a==='home'){page=a==='cal'?'cal':'home';note='';box=null;try{location.hash=page==='cal'?'calendar':'';}catch(e){}}
  else if(a==='ask'){mode='login';note='';}
@@ -153,9 +155,18 @@ function act(a,d){
  else if(a==='imp'){box='';boxMode='imp';note='Paste exported data below.';}
  else if(a==='load'){try{const o=JSON.parse(document.getElementById('box').value);if(!o||!Array.isArray(o.players))throw 0;S=o;if(!Array.isArray(S.events))S.events=[];if(!Array.isArray(S.log))S.log=[];save();box=null;}catch(e){note='That data is not valid.';}}
  else if(a==='addp'){const n=document.getElementById('np').value.trim();
+  const g=id=>Math.max(0,parseInt(document.getElementById(id).value,10)||0);
+  const rv=document.getElementById('nr').value.trim();
   if(!n)note='Enter a player name.';
   else if(S.players.some(p=>p.name.toLowerCase()===n.toLowerCase()))note=n+' is already on the leaderboard.';
-  else{S.players.push({name:n,w:0,d:0,l:0});save();note=n+' added.';}}
+  else{S.players.push({name:n,w:g('nw'),d:g('nd'),l:g('nl'),rt:rv===''?'':Number(rv)});save();note=n+' added.';}}
+ else if(a==='delp'){delC=+d.i;}
+ else if(a==='delx'){delC=-1;}
+ else if(a==='delp2'){const i=+d.i,p=S.players[i];
+  if(p){S.players.splice(i,1);
+   S.log=S.log.filter(x=>x.i!==i).map(x=>({i:x.i>i?x.i-1:x.i,r:x.r}));
+   S.events.forEach(e=>{e.s=e.s.filter(n=>n!==p.name);if(e.r)delete e.r[p.name];});
+   save();note=p.name+' deleted.';}}
  else if(a==='su'){const sel=document.getElementById('su-'+d.e),n=sel&&sel.value;
   if(!n)note='Choose your name first.';
   else if(ev&&S.players.some(p=>p.name===n)&&!ev.s.includes(n)){ev.s.push(n);save();note=n+' is signed up!';}}
