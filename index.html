@@ -99,7 +99,7 @@ function homeHtml(){
   return '<li class="r'+(k+1)+'"><span class="n">'+(k+1)+'</span><span class="p">'+esc(p.name)+(k===0?' <span class="crown">&#128081; LGM</span>':'')+'</span>'+
   (admin()?'<span class="acts"><button class="s" data-a="w" data-i="'+i+'">Win +5</button><button class="s" data-a="d" data-i="'+i+'">Draw +3</button><button class="s" data-a="l" data-i="'+i+'">Loss +1</button><input class="rin" type="number" step="any" placeholder="Rating" aria-label="Rating for '+esc(p.name)+'" data-rt="'+i+'" value="'+(p.rt===undefined?'':esc(p.rt))+'"></span>':'')+
   '<span class="pt">'+pts(p)+' <small>pts</small></span>'+(rec?'<span class="rec">'+rec+'</span>':'')+'</li>';}).join('');
- return '<h2>'+(admin()?'Admin':'Rankings')+'</h2><p class="leg">Win = 5 pts · Draw = 3 pts · Loss = 1 pt</p>'+adminBar()+'<ol>'+rows+'</ol>';
+ return '<h2>'+(admin()?'Admin':'Rankings')+'</h2><p class="leg">Win = 5 pts · Draw = 3 pts · Loss = 1 pt</p>'+adminBar()+(admin()?'<div class="row" style="margin:0 0 16px"><input id="np" type="text" placeholder="New player name" maxlength="30" aria-label="New player name"><button data-a="addp">Add player</button></div>':'')+'<ol>'+rows+'</ol>';
 }
 function evCard(e){
  const r=e.r||{},done=Object.keys(r).length>0;
@@ -152,6 +152,10 @@ function act(a,d){
  else if(a==='exp'){box=JSON.stringify(S);boxMode='exp';note='Copy this text to back up your standings and events.';}
  else if(a==='imp'){box='';boxMode='imp';note='Paste exported data below.';}
  else if(a==='load'){try{const o=JSON.parse(document.getElementById('box').value);if(!o||!Array.isArray(o.players))throw 0;S=o;if(!Array.isArray(S.events))S.events=[];if(!Array.isArray(S.log))S.log=[];save();box=null;}catch(e){note='That data is not valid.';}}
+ else if(a==='addp'){const n=document.getElementById('np').value.trim();
+  if(!n)note='Enter a player name.';
+  else if(S.players.some(p=>p.name.toLowerCase()===n.toLowerCase()))note=n+' is already on the leaderboard.';
+  else{S.players.push({name:n,w:0,d:0,l:0});save();note=n+' added.';}}
  else if(a==='su'){const sel=document.getElementById('su-'+d.e),n=sel&&sel.value;
   if(!n)note='Choose your name first.';
   else if(ev&&S.players.some(p=>p.name===n)&&!ev.s.includes(n)){ev.s.push(n);save();note=n+' is signed up!';}}
