@@ -41,11 +41,14 @@ input{font:inherit;padding:10px 14px;border-radius:10px;border:1px solid var(--l
 <main id="root"></main>
 <script id="state" type="application/json">{"players":[{"name":"Latte","w":0,"d":0,"l":0},{"name":"Aaron","w":0,"d":0,"l":0},{"name":"Anakin","w":0,"d":0,"l":0},{"name":"Ray","w":0,"d":0,"l":0},{"name":"Narvy","w":0,"d":0,"l":0},{"name":"Kato","w":0,"d":0,"l":0},{"name":"Jin","w":0,"d":0,"l":0},{"name":"Mike","w":0,"d":0,"l":0},{"name":"Taro","w":0,"d":0,"l":0}],"log":[]}</script>
 <script id="app">
-const S=JSON.parse(document.getElementById('state').textContent);
+const KEY='lfide-standings-v1';
+let S=JSON.parse(document.getElementById('state').textContent);
+try{const t=localStorage.getItem(KEY);if(t){const o=JSON.parse(t);if(o&&Array.isArray(o.players))S=o;}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));dirty=false;note='Saved.';}catch(e){note='Could not save in this browser.';}}
 const CODE='031415',RULES='https://docs.google.com/document/d/1HzTxL0eb090Ic19-g5DNzUJjz0i0eQMYZOhuLdXq4Hk/edit?tab=t.0';
 const pts=p=>p.w*5+p.d*3+p.l;
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let mode='view',dirty=false,note='';
+let mode='view',dirty=false,note='',box=null,boxMode='';
 const root=document.getElementById('root');
 function ranked(){return S.players.map((p,i)=>({p,i})).sort((a,b)=>pts(b.p)-pts(a.p)||b.p.w-a.p.w||a.i-b.i);}
 function render(){
@@ -57,7 +60,7 @@ function render(){
   (gp?'<span class="rec">'+p.w+'W '+p.d+'D '+p.l+'L</span>':'')+'</li>';}).join('');
  let top='<h1>LFIDE</h1><p class="sub">Current rankings and league rules.</p><a class="btn" href="'+RULES+'" target="_blank" rel="noopener">Rules and Regulations</a>';
  let mid='<h2>'+(mode==='admin'?'Admin':'Rankings')+'</h2><p class="leg">Win = 5 pts · Draw = 3 pts · Loss = 1 pt</p>';
- if(mode==='admin') mid+='<div class="bar"><button data-a="undo">Undo last</button><button data-a="pub">Publish changes</button><button class="g" data-a="exit">Exit admin</button></div><p class="msg">'+(dirty?'Unsaved changes. Press Publish to update the public page.':'')+esc(note)+'</p>';
+ if(mode==='admin') mid+='<div class="bar"><button data-a="undo">Undo last</button><button class="s" data-a="exp">Export</button><button class="s" data-a="imp">Import</button><button class="g" data-a="exit">Exit admin</button></div><p class="msg">'+esc(note)+'</p>'+(box!==null?'<textarea id="box" rows="6" style="width:100%;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)">'+esc(box)+'</textarea>'+(boxMode==='imp'?'<div class="bar"><button data-a="load">Load pasted data</button></div>':''):'');
  let foot='<div class="foot">';
  if(mode==='login') foot+='<input id="code" type="password" placeholder="Admin code" autocomplete="off"> <button data-a="login">Enter</button> <button class="g" data-a="exit">Cancel</button><p class="msg">'+esc(note)+'</p>';
  else if(mode==='view') foot+='<button class="g" data-a="ask">Admin</button>';
@@ -65,22 +68,15 @@ function render(){
  root.innerHTML=top+mid+'<ol>'+rows+'</ol>'+foot;
  const c=document.getElementById('code'); if(c){c.focus();c.onkeydown=e=>{if(e.key==='Enter')act('login');};}
 }
-function build(){
- const head='<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>LFIDE</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&display=swap">';
- const st=JSON.stringify(S).replace(/</g,'\\u003c');
- return '<!DOCTYPE html><html lang="en"><head>'+head+'<style id="css">'+document.getElementById('css').textContent+'</style></head><body><main id="root"></main><script id="state" type="application/json">'+st+'<\/script><script id="app">'+document.getElementById('app').textContent+'<\/script></body></html>';
-}
 async function act(a,i){
  if(a==='ask'){mode='login';note='';}
  else if(a==='exit'){mode='view';note='';}
  else if(a==='login'){const v=document.getElementById('code').value; if(v===CODE){mode='admin';note='';}else{note='Wrong code.';}}
- else if(a==='w'||a==='d'||a==='l'){S.players[i][a]++;S.log.push({i:+i,r:a});dirty=true;note='';}
- else if(a==='undo'){const x=S.log.pop(); if(x){S.players[x.i][x.r]--;dirty=true;note='';}else note='Nothing to undo.';}
- else if(a==='pub'){
-  const c=window.claude&&await claude.use('artifact');
-  if(!c){note='Publishing is only available to the page owner.';}
-  else{try{await c.publish(build());return;}catch(e){note='Could not publish: '+(e.code||e.message);}}
- }
+ else if(a==='w'||a==='d'||a==='l'){S.players[i][a]++;S.log.push({i:+i,r:a});save();}
+ else if(a==='undo'){const x=S.log.pop(); if(x){S.players[x.i][x.r]--;save();}else note='Nothing to undo.';}
+ else if(a==='exp'){box=JSON.stringify(S);boxMode='exp';note='Copy this text to back up your standings.';}
+ else if(a==='imp'){box='';boxMode='imp';note='Paste exported data below.';}
+ else if(a==='load'){try{const o=JSON.parse(document.getElementById('box').value);if(!o||!Array.isArray(o.players))throw 0;S=o;save();box=null;}catch(e){note='That data is not valid.';}}
  render();
 }
 root.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.a)act(b.dataset.a,b.dataset.i);});
